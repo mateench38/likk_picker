@@ -28,18 +28,12 @@ class CameraView extends StatefulWidget {
     this.videoDuration,
     this.resolutionPreset,
     this.imageFormatGroup,
-    this.saveImage = true,
   }) : super(key: key);
 
   ///
   /// Vide duration. Default is 10 seconds.
   ///
   final Duration? videoDuration;
-
-  ///
-  /// Save image to gallery
-  ///
-  final bool saveImage;
 
   ///
   /// Camera resolution. Default to [ResolutionPreset.medium]
@@ -98,7 +92,6 @@ class _CameraViewState extends State<CameraView>
       context: context,
       imageFormatGroup: widget.imageFormatGroup,
       resolutionPreset: widget.resolutionPreset,
-      saveImage: widget.saveImage,
     );
     _playgroundController = PlaygroundController()
       ..addListener(_playgroundListener);

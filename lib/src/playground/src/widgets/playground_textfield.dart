@@ -115,7 +115,7 @@ class _PlaygroundTextfieldState extends State<PlaygroundTextfield> {
                 controller: _textController,
                 autofocus: true,
                 textAlign: value.textAlign,
-                autocorrect: false,
+                autocorrect: true,
                 minLines: 1,
                 maxLines: null,
                 // maxLines: value.convertedMaxLines,

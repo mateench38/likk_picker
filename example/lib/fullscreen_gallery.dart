@@ -26,7 +26,6 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
     super.initState();
     controller = GalleryController(
       gallerySetting: GallerySetting(
-          enableCropper: true,
           maximum: 1,
           requestType: RequestType.common,
           onItemClick: (item, list) {},

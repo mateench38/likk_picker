@@ -1,7 +1,8 @@
-import 'package:example/collapsable_gallery.dart';
-import 'package:example/fullscreen_gallery.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+
+import 'collapsable_gallery.dart';
+import 'fullscreen_gallery.dart';
 
 void main() {
   runApp(MyApp());

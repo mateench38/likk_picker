@@ -209,8 +209,11 @@ class GalleryAssetSelectorState extends State<GalleryAssetSelector>
                               );
                             },
                             child: _TextButton(
-                              onPressed: () => widget.onSubmit(context),
-                              label: 'SELECT',
+                              onPressed: () {
+                                widget.onSubmit(context);
+                                value.selectedEntities.clear();
+                              },
+                              label: 'SEND',
                             ),
                           ),
                         ),

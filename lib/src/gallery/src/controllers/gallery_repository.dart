@@ -57,9 +57,14 @@ class GalleryRepository {
         if (albums[i].name.toLowerCase() == 'hidden') {
           albums.removeAt(i);
         }
+        if (albums[i].name == 'Videos') {
+          albums.removeAt(i);
+        }
         if (albums[i].name.toLowerCase().contains('recent') ||
             albums[i].name.toLowerCase().contains('camera roll')) {
           final tmp = albums[i];
+          print(albums[i].assetList);
+
           albums.removeAt(i);
           // ignore: cascade_invocations
           albums.insert(0, tmp);
@@ -73,7 +78,10 @@ class GalleryRepository {
       // Update selected album
       albumNotifier.value = BaseState(data: album, hasPermission: true);
 
-      final entities = await album?.assetList ?? <AssetEntity>[];
+      var listWithOutVideos = await album?.assetList ?? <AssetEntity>[];
+      listWithOutVideos.removeWhere((element) => element.typeInt == 2);
+
+      final entities = listWithOutVideos;
       // Update selected album entities list
       entitiesNotifier.value = BaseState(data: entities, hasPermission: true);
     } catch (e) {

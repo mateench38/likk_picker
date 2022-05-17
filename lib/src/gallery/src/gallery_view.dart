@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:image_cropper/image_cropper.dart';
 import 'package:likk_picker/likk_picker.dart';
 import 'package:likk_picker/src/animations/animations.dart';
 import 'package:likk_picker/src/camera/camera_view.dart';
@@ -190,7 +188,7 @@ class _GalleryViewState extends State<GalleryView>
   late final AnimationController _animationController;
   late final Animation<double> _animation;
 
-  double albumHeight = 0;
+  double albumHeight = 0.0;
 
   @override
   void initState() {
@@ -408,7 +406,7 @@ class _GalleryViewState extends State<GalleryView>
         GalleryAssetSelector(
           controller: _controller,
           onEdit: (e) {
-            _controller.openPlayground(context, e);
+            _controller._openPlayground(context, e);
           },
           onSubmit: _controller.completeTask,
         ),
@@ -425,7 +423,7 @@ class _GalleryViewState extends State<GalleryView>
             return Visibility(
               visible: _animation.value > 0.0,
               child: Transform.translate(
-                offset: Offset(0, offsetY),
+                offset: Offset(0.0, offsetY),
                 child: child,
               ),
             );
@@ -497,7 +495,6 @@ class GalleryViewField extends StatefulWidget {
   /// If used [GalleryViewField] with [GalleryViewWrapper]
   /// this setting will be ignored.
   ///
-  // ignore: lines_longer_than_80_chars
   /// [GalleryController] passed to the [GalleryViewWrapper] will be applicable..
   /// ///
   final GalleryController controller;
@@ -756,29 +753,14 @@ class GalleryController extends ValueNotifier<GalleryValue> {
   }
 
   /// When selection is completed
-  // ignore: avoid_void_async
-  void completeTask(BuildContext context) async {
-    if (setting.enableCropper &&
-        setting.maximum == 1 &&
-        value.selectedEntities.first.entity.type == AssetType.image) {
-      final entity = await openCropper(context, value.selectedEntities.first);
-      if (entity != null) {
-        value.selectedEntities.clear();
-        value.selectedEntities.add(entity);
-      } else {
-        return;
-      }
-    }
-
+  void completeTask(BuildContext context) {
     if (_fullScreenMode) {
-      // ignore: use_build_context_synchronously
       Navigator.of(context).pop(value.selectedEntities);
     } else {
       galleryState.value = GalleryState.hide;
       _panelController.closePanel();
       // _checkKeyboard.value = false;
     }
-
     _onSubmitted?.call(value.selectedEntities);
     _completer.complete(value.selectedEntities);
     // _internal = true;
@@ -821,13 +803,14 @@ class GalleryController extends ValueNotifier<GalleryValue> {
   }
 
   /// Open camera from [GalleryView]
-  Future<void> openCamera(BuildContext context) async {
+  Future<LikkEntity?> openCamera(BuildContext context) async {
     _accessCamera = true;
     LikkEntity? entity;
 
     final route = SlideTransitionPageRoute<LikkEntity>(
       builder: const CameraView(),
       begainHorizontal: true,
+      endHorizontal: false,
       transitionDuration: const Duration(milliseconds: 300),
     );
 
@@ -838,120 +821,19 @@ class GalleryController extends ValueNotifier<GalleryValue> {
       _closeOnCameraSelect();
     }
 
-    final entities = [...value.selectedEntities];
-    if (entity == null) {
-      _accessCamera = false;
-      _completer.complete(entities);
-      return;
+    var entities = [...value.selectedEntities];
+    if (entity != null) {
+      entities.add(entity);
+      _onChanged?.call(entity, false);
+      _onSubmitted?.call(entities);
     }
-
-    if (setting.enableCropper && entity.entity.type == AssetType.image) {
-      // ignore: use_build_context_synchronously
-      final editedEntity = await openCropper(context, entity);
-      if (editedEntity != null) {
-        entity = editedEntity;
-      } else {
-        return;
-      }
-    }
-    if (entities.length == setting.maximum) {
-      entities.removeAt(0);
-    }
-    entities.add(entity);
-    _onChanged?.call(entity, false);
-    _onSubmitted?.call(entities);
     _accessCamera = false;
     _completer.complete(entities);
-  }
-
-  /// Take photo with camera
-  Future<LikkEntity?> takePhoto(BuildContext context,
-      {bool saveImage = true}) async {
-    _accessCamera = true;
-    LikkEntity? entity;
-
-    final route = SlideTransitionPageRoute<LikkEntity>(
-      builder: CameraView(saveImage: saveImage),
-      begainHorizontal: true,
-      transitionDuration: const Duration(milliseconds: 300),
-    );
-
-    entity = await Navigator.of(context).push(route);
-
-    if (entity == null) {
-      _accessCamera = false;
-      return null;
-    }
-
-    // if (setting.enableCropper && entity.entity.type == AssetType.image) {
-    //   // ignore: use_build_context_synchronously
-    //   final editedEntity = await openCropper(context, entity);
-    //   if (editedEntity != null) {
-    //     entity = editedEntity;
-    //   } else {
-    //     return;
-    //   }
-    // }
-
-    _accessCamera = false;
     return entity;
   }
 
   /// Open camera from [GalleryView]
-  Future<LikkEntity?> openCropper(
-      BuildContext context, LikkEntity entity) async {
-    _accessCamera = true;
-
-    if (!fullScreenMode) {
-      _closeOnCameraSelect();
-    }
-    final file = await entity.entity.file;
-
-    if (file == null) {
-      return null;
-    }
-
-    final croppedFile = await ImageCropper.cropImage(
-      sourcePath: file.path,
-      androidUiSettings: const AndroidUiSettings(
-        toolbarTitle: 'Cropper',
-        toolbarColor: Color(0xFFF54B64),
-        toolbarWidgetColor: Colors.white,
-        initAspectRatio: CropAspectRatioPreset.original,
-        lockAspectRatio: false,
-      ),
-      iosUiSettings: const IOSUiSettings(),
-    );
-    final data = await croppedFile?.readAsBytes();
-
-    if (data == null) {
-      return null;
-    }
-
-    AssetEntity? assetEntity;
-    if (setting.saveCropper) {
-      assetEntity = await PhotoManager.editor.saveImage(data);
-    } else {
-      assetEntity = AssetEntity(
-        id: 'temporary',
-        typeInt: 1,
-        width: 100,
-        height: 100,
-      );
-    }
-
-    if (assetEntity == null) {
-      return null;
-    }
-    _accessCamera = false;
-    return LikkEntity(
-      entity: assetEntity,
-      bytes: data,
-    );
-  }
-
-  /// Open camera from [GalleryView]
-  Future<void> openPlayground(
+  Future<void> _openPlayground(
     BuildContext context,
     LikkEntity entity,
   ) async {
@@ -978,8 +860,8 @@ class GalleryController extends ValueNotifier<GalleryValue> {
 
     var entities = [...value.selectedEntities];
     if (pickedEntity != null) {
-      entities.add(pickedEntity);
-      _onChanged?.call(pickedEntity, false);
+      entities.add(entity);
+      _onChanged?.call(entity, false);
       _onSubmitted?.call(entities);
     }
     _accessCamera = false;
@@ -1011,14 +893,6 @@ class GalleryController extends ValueNotifier<GalleryValue> {
         permission != PermissionState.limited) {
       PhotoManager.openSetting();
       return [];
-    }
-
-    if (selectedEntities?.isNotEmpty ?? false) {
-      _internal = true;
-      value = value.copyWith(
-        selectedEntities: selectedEntities,
-        previousSelection: true,
-      );
     }
 
     _repository.fetchAlbums(setting.requestType);
